@@ -58,12 +58,11 @@ def update_speed(uploadLabel: ctk.CTkLabel=None, downloadLabel: ctk.CTkLabel=Non
 
 def uploadWindow():
     root = ctk.CTk()
-    root.geometry("200x150+1136+30")
+    root.geometry("200x130+1136+30")
     root.config(bg='#000000')
     ctk.set_appearance_mode("dark")
     root.wm_attributes('-transparentcolor','#000000')
     root.overrideredirect(True)
-    root.attributes('-topmost', True)
 
     uploadFrame = ctk.CTkFrame(root, corner_radius=20, bg_color="#000000", width=200, height=60)
     uploadFrame.place(x=0, y=0)
