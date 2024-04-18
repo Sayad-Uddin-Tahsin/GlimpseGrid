@@ -42,21 +42,6 @@ class NetworkMonitorWidget:
         self.upload_label = None
         self.download_label = None
         self.db = json.load(open(resource_path("config.json", data=True), "r"))
-        # threading.Thread(target=self.apply_appearence_mode, daemon=True).start()
-
-    def apply_appearence_mode(self):
-        def on_change(color):
-            print("applied!")
-            self.root._set_appearance_mode(color.lower())
-            self.root._apply_appearance_mode(self.root.cget("fg_color"))
-            for child in self.root.winfo_children():
-                print(child)
-                if child == ctk.CTkFrame:
-                    print("GG")
-            self.root.update_idletasks()
-            print("applied!")
-
-        darkdetect.listener(on_change)
 
     def create_window(self) -> None:
         self.root = ctk.CTk()
