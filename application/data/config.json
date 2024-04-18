@@ -1,0 +1,16 @@
+{
+    "state": "production",
+    "NetworkMonitor": {
+        "Upload": true,
+        "Download": true,
+        "width": 130,
+        "x": 1136,
+        "y": 30
+    },
+    "CPUMonitor": {
+        "status": true,
+        "width": 60,
+        "x": 1201,
+        "y": 80
+    }
+}
