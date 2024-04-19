@@ -1,0 +1,12 @@
+{
+    "CPUMonitor": {
+        "dynamicicon": {
+            "dark": "CPU\\darktheme_dynamicicon.png",
+            "light": "CPU\\lighttheme_dynamicicon.png"
+        },
+        "nodynamicicon": {
+            "dark": "CPU\\darktheme_nodynamicicon.png",
+            "light": "CPU\\lighttheme_nodynamicicon.png"
+        }
+    }
+}

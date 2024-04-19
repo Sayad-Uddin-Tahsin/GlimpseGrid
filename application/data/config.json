@@ -1,6 +1,6 @@
 {
-    "state": "production",
     "NetworkMonitor": {
+        "status": true,
         "Upload": true,
         "Download": true,
         "width": 130,
@@ -9,8 +9,9 @@
     },
     "CPUMonitor": {
         "status": true,
+        "dynamic_icon": true,
         "width": 60,
         "x": 1201,
-        "y": 80
+        "y": 170
     }
 }

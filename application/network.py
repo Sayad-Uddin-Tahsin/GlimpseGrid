@@ -47,6 +47,8 @@ class NetworkMonitorWidget:
         self.root = ctk.CTk()
         self.root._set_appearance_mode("system")
         self.transparent_color = "#000000"
+        self.root.title("Network Widget")
+        self.root.resizable(0, 0)
         self.root.configure(fg_color=self.transparent_color)
         self.root.wm_attributes('-transparentcolor', self.transparent_color)
         self.root.overrideredirect(1)
@@ -112,7 +114,7 @@ class NetworkMonitorWidget:
         threading.Thread(target=self.update_speed, daemon=True).start()
 
         if self.db["NetworkMonitor"]['Upload'] or self.db["NetworkMonitor"]['Download']:
-            self.root.geometry(f"200x200+{(self.root.winfo_screenwidth() - 200) - 30}+30")
+            self.root.geometry(f"200x{self.db['NetworkMonitor']['width']}+{self.db['NetworkMonitor']['x']}+{self.db['NetworkMonitor']['y']}")
 
             self.root.mainloop()
     
