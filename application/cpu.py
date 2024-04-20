@@ -119,7 +119,7 @@ class CPUMonitorWidget:
     def create_window(self) -> None:
         self.root = ctk.CTk()
         self.root.config(bg='#000000')
-        self.root._set_appearance_mode("system")
+        ctk.set_appearance_mode(self.db['CPUMonitor']['theme'])
         self.root.title("CPU Widget")
         self.root.resizable(0, 0)
         self.root.wm_attributes('-transparentcolor','#000000')

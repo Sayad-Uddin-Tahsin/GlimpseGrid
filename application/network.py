@@ -45,7 +45,7 @@ class NetworkMonitorWidget:
 
     def create_window(self) -> None:
         self.root = ctk.CTk()
-        self.root._set_appearance_mode("system")
+        ctk.set_appearance_mode(self.db['NetworkMonitor']['theme'])
         self.transparent_color = "#000000"
         self.root.title("Network Widget")
         self.root.resizable(0, 0)

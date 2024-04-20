@@ -3,6 +3,7 @@
         "status": true,
         "Upload": true,
         "Download": true,
+        "theme": "system",
         "width": 130,
         "x": 1136,
         "y": 30
@@ -10,6 +11,7 @@
     "CPUMonitor": {
         "status": true,
         "dynamic_icon": true,
+        "theme": "system",
         "width": 60,
         "x": 1201,
         "y": 170
