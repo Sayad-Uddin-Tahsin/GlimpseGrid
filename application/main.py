@@ -323,6 +323,94 @@ class CPUMonitorWidget:
 
         threading.Thread(target=self.update_usage, args=(usage_label, ), daemon=True).start()
 
+class NetworkMonitorWidget:
+    def __init__(self, root: ctk.CTkFrame, db: dict) -> None:
+        self.upload_label = None
+        self.download_label = None
+        self.db = db
+        self.theme = self.db["NetworkMonitor"]['theme']
+        self.root = root
+        self._stop = threading.Event()
+
+    def stop(self):
+        self._stop.set()
+ 
+    def stopped(self):
+        return self._stop.is_set()
+    
+    def destroy_all(self):
+        for child in self.root.winfo_children():
+            child.destroy()
+        
+    def format_speed(self, speed) -> str:
+        speed_in_kbps = speed / 1024
+        if speed_in_kbps < 0:
+            return "0.00 Kbps"
+        if speed_in_kbps < 1024:
+            return f"{speed_in_kbps:.2f} Kbps"
+        elif speed_in_kbps < 1024 * 1024:
+            return f"{speed_in_kbps / 1024:.2f} Mbps"
+        else:
+            return f"{speed_in_kbps / (1024 * 1024):.2f} Gbps"
+
+    def get_network_speed(self, interval) -> tuple[float, float]:
+        last_bytes_sent = psutil.net_io_counters().bytes_sent
+        last_bytes_recv = psutil.net_io_counters().bytes_recv
+        
+        while True:
+            if self.stopped():
+                break
+            bytes_sent = psutil.net_io_counters().bytes_sent
+            bytes_recv = psutil.net_io_counters().bytes_recv
+            
+            upload_speed = (bytes_sent - last_bytes_sent) / interval
+            download_speed = (bytes_recv - last_bytes_recv) / interval
+            
+            last_bytes_sent = bytes_sent
+            last_bytes_recv = bytes_recv
+            
+            yield upload_speed, download_speed
+            
+            time.sleep(interval)
+
+    def update_speed(self) -> None:
+        for upload, download in self.get_network_speed(0.5):
+            if self.upload_label:
+                self.upload_label.configure(text=f" {self.format_speed(upload)}")
+            if self.download_label:
+                self.download_label.configure(text=f" {self.format_speed(download)}")
+    
+    def create_network_monitor(self) -> None:
+        width = 0
+        if self.db["NetworkMonitor"]['Upload']:
+            upload_frame = ctk.CTkFrame(master=self.root, corner_radius=20, width=200, height=60)
+            upload_frame.place(x=self.root.winfo_width() / 2 - (upload_frame.cget("width") / 2), y=0)
+            upload_frame.configure(fg_color='gray81' if self.theme == "light" else 'gray20')
+
+            self.upload_label = ctk.CTkLabel(master=upload_frame, text=" 0.00 Kbps", image=ctk.CTkImage(Image.open(resource_path("Upload.png", network=True)), Image.open(resource_path("Upload.png", network=True)), (40, 40)), compound="left", font=("Titillium Web", 20, "bold"))
+            self.upload_label.place(x=8, y=8)
+            self.upload_label.configure(text_color='gray10' if self.theme == "light" else '#DCE4EE')
+            self.upload_label.configure(fg_color='gray81' if self.theme == "light" else 'gray20')
+            width += 60
+        
+        if self.db["NetworkMonitor"]['Download']:
+            if self.db["NetworkMonitor"]['Upload']:
+                width += 10
+            
+            download_frame = ctk.CTkFrame(master=self.root, corner_radius=20, width=200, height=60)
+            download_frame.place(x=self.root.winfo_width() / 2 - (download_frame.cget("width") / 2), y=70 if self.db["NetworkMonitor"]['Upload'] else 0)
+            download_frame.configure(fg_color='gray81' if self.theme == "light" else 'gray20')
+
+            self.download_label = ctk.CTkLabel(master=download_frame, text=" 0.00 Kbps", image=ctk.CTkImage(Image.open(resource_path("Download.png", network=True)), Image.open(resource_path("Download.png", network=True)), (40, 40)), compound="left", font=("Titillium Web", 20, "bold"))
+            self.download_label.place(x=8, y=8)
+            self.download_label.configure(text_color='gray10' if self.theme == "light" else '#DCE4EE')
+            self.download_label.configure(fg_color='gray81' if self.theme == "light" else 'gray20')
+
+            width += 60
+        
+        threading.Thread(target=self.update_speed, daemon=True).start()
+
+
 class SettingsWindow:
     def __init__(self) -> None:
         self.db = json.load(open(resource_path("config.json", data=True), "r"))
@@ -344,7 +432,7 @@ class SettingsWindow:
         self.root.resizable(0, 0)
         self.root._set_appearance_mode("system")
         positionRight = int(self.root.winfo_screenwidth()/2 - 600/2)
-        positionDown = int(self.root.winfo_screenheight()/2 - 400/2) - 50
+        positionDown = int(self.root.winfo_screenheight()/2 - 380/2) - 50
         self.root.geometry("+{}+{}".format(positionRight, positionDown))
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
     
@@ -378,6 +466,10 @@ class SettingsWindow:
         self.preview_class = CPUMonitorWidget(f, d)
         self.preview_class.create_cpu_monitor()
 
+    def _run_network_preview(self, f, d):
+        self.preview_class = NetworkMonitorWidget(f, d)
+        self.preview_class.create_network_monitor()
+    
     def show_widget_info(self, widgetkey: str, widget: str, info: ctk.CTkFrame):
         for child in info.winfo_children():
             child.destroy()
@@ -391,6 +483,11 @@ class SettingsWindow:
         info.update()
 
         if widgetkey == "CPUMonitor":
+            self.root.geometry("600x380")
+            positionRight = int(self.root.winfo_screenwidth()/2 - 600/2)
+            positionDown = int(self.root.winfo_screenheight()/2 - 380/2) - 50
+            self.root.geometry("+{}+{}".format(positionRight, positionDown))
+
             def save_callback():
                 self._save(widgetkey, "status", True if status_radio_var.get() == 1 else False)
                 self._save(widgetkey, "dynamic_icon", True if dyiconradio_var.get() == 1 else False)
@@ -431,6 +528,93 @@ class SettingsWindow:
 
             save_button = ctk.CTkButton(info, text="Apply", font=("Titillium Web", 13), command=save_callback, width=50, height=20)
             save_button.place(x=info.winfo_width() - save_button.cget("width") - 10, y=info.winfo_height() - save_button.cget("height") - 15)
+        
+        elif widgetkey == "NetworkMonitor":
+            startup_upload_status_var = ctk.IntVar(value=1 if self.db[widgetkey]['Upload'] else 0)
+            last_upload_status_var = ctk.IntVar(value=startup_upload_status_var.get())
+
+            def increase_window_size(width: int, height: int):
+                self.root.geometry(f"{width}x{height}")
+                positionRight = int((self.root.winfo_screenwidth()/2) - (width/2))
+                positionDown = int((self.root.winfo_screenheight()/2) - (height/2)) - 50
+                self.root.geometry("+{}+{}".format(positionRight, positionDown))
+            
+            if startup_upload_status_var.get() == 1:
+                increase_window_size(600, 450)
+                self.mainFrame.configure(height=370)
+
+            def save_callback():
+                isupload = True if uploadradio_var.get() == 1 else False
+                self._save(widgetkey, "status", True if status_radio_var.get() == 1 else False)
+                self._save(widgetkey, "Upload", isupload)
+                if isupload:
+                    self._save(widgetkey, "height", 130)
+                else:
+                    self._save(widgetkey, "height", 60)
+                self._save(widgetkey, 'theme', "system" if themeradio_var.get() == 1 else "light" if themeradio_var.get() == 2 else "dark")
+                restart()
+            
+            def on_change():
+                self.preview_class.stop()
+                self.preview_class.destroy_all()
+                temp_db = self.db.copy()
+                temp_db[widgetkey]['dynamic_icon'] = True if uploadradio_var.get() == 1 else False
+                if (True if uploadradio_var.get() == 1 else False):
+                    if not last_upload_status_var.get() == 1:
+                        increase_window_size(600, 450)
+                        previewImageFrame.configure(height=130)
+                        for child in info.winfo_children()[2:]:
+                            child.place_configure(y = int(child.place_info()['y']) + 70)
+                        self.mainFrame.configure(height=370)
+                        last_upload_status_var.set(value=1)
+                        temp_db[widgetkey]['Upload'] = True
+                    else:
+                        pass
+                else:
+                    if uploadradio_var.get() != last_upload_status_var.get():
+                        increase_window_size(600, 380)
+                        previewImageFrame.configure(height=60)
+                        for child in info.winfo_children()[2:]:
+                            child.place_configure(y = int(child.place_info()['y']) - 70)
+                        self.mainFrame.configure(height=300)
+                        last_upload_status_var.set(value=0)
+                        temp_db[widgetkey]['Upload'] = False
+
+                temp_db[widgetkey]['theme'] = darkdetect.theme().lower() if themeradio_var.get() == 1 else "light" if themeradio_var.get() == 2 else "dark"
+                self.preview_thread = threading.Thread(target=self._run_network_preview, args=(previewImageFrame, temp_db), daemon=True)
+                self.preview_thread.start()
+
+            previewImageFrame = ctk.CTkFrame(info, height=60, width=340)
+            if startup_upload_status_var.get() == 1:
+                previewImageFrame.configure(height=previewImageFrame.cget("height") + 70)
+            previewImageFrame.place(x=10, y=40)
+            previewImageFrame.pack_propagate(0)
+            self.preview_thread = threading.Thread(target=self._run_network_preview, args=(previewImageFrame, self.db), daemon=True)
+            self.preview_thread.start()
+
+            status_radio_var = ctk.IntVar(value=1 if self.db[widgetkey]['status'] else 0)
+
+            ctk.CTkLabel(info, text="Widget Status", font=("Titillium Web", 13, "bold")).place(x=10, y=100)
+            ctk.CTkRadioButton(info, text="ON", variable=status_radio_var, fg_color=('#008000', '#008000'), hover_color=('#008000', '#008000'), value=1).place(x=10, y=130)
+            ctk.CTkRadioButton(info, text="OFF", variable=status_radio_var, fg_color=('#ff0000', '#ff0000'), hover_color=('#ff0000', '#ff0000'), value=0).place(x=160, y=130)
+        
+            ctk.CTkLabel(info, text="Upload Speed", font=("Titillium Web", 13, "bold")).place(x=10, y=160)
+            uploadradio_var = ctk.IntVar(value=1 if self.db[widgetkey]['Upload'] else 0)
+            ctk.CTkRadioButton(info, text="ON", variable=uploadradio_var, command=on_change, value=1).place(x=10, y=190)
+            ctk.CTkRadioButton(info, text="OFF", variable=uploadradio_var, command=on_change, value=0).place(x=160, y=190)
+        
+            ctk.CTkLabel(info, text="Theme", font=("Titillium Web", 13, "bold")).place(x=10, y=220)
+            themeradio_var = ctk.IntVar(value=1 if self.db[widgetkey]['theme'] == "system" else 2 if self.db[widgetkey]['theme'] == "light" else 3 if self.db[widgetkey]['theme'] == "dark" else 0)
+            ctk.CTkRadioButton(info, text="System", variable=themeradio_var, command=on_change, value=1).place(x=10, y=250)
+            ctk.CTkRadioButton(info, text="Light", variable=themeradio_var, command=on_change, value=2).place(x=90, y=250)
+            ctk.CTkRadioButton(info, text="Dark", variable=themeradio_var, command=on_change, value=3).place(x=170, y=250)
+
+            save_button = ctk.CTkButton(info, text="Apply", font=("Titillium Web", 13), command=save_callback, width=50, height=20)
+            save_button.place(x=info.winfo_width() - save_button.cget("width") - 10, y=info.winfo_height() - save_button.cget("height") - 15)
+            if startup_upload_status_var.get() == 1:
+                for child in info.winfo_children()[2:]:
+                    child.place_configure(y = int(child.place_info()['y']) + 70)
+                self.mainFrame.configure(height=370)      
 
     def move_to_widget(self, key, widget, frame: ctk.CTkFrame, info: ctk.CTkFrame):
         if frame != self.last_widget_selected_frame:
@@ -438,6 +622,13 @@ class SettingsWindow:
                 self.last_widget_selected_frame.configure(fg_color="transparent")
             frame.configure(fg_color=('gray81', 'gray20'))
             self.last_widget_selected_frame = frame
+            if self.preview_class:
+                self.preview_class.stop()
+                self.preview_class.destroy_all()
+            positionRight = int(self.root.winfo_screenwidth()/2 - 600/2)
+            positionDown = int(self.root.winfo_screenheight()/2 - 380/2) - 50
+            self.root.geometry("+{}+{}".format(positionRight, positionDown))
+            self.mainFrame.configure(height=300)
             self.show_widget_info(key, widget, info)
         else:
             pass
@@ -446,40 +637,40 @@ class SettingsWindow:
         title = ctk.CTkLabel(self.root, text="GlimpseGrid", font=("Titillium Web", 40, "bold"))
         title.pack()
 
-        mainFrame = ctk.CTkFrame(self.root, border_width=1, width=580, height=300)
-        mainFrame.pack_propagate(0)
-        mainFrame.pack()
+        self.mainFrame = ctk.CTkFrame(self.root, border_width=1, width=580, height=300)
+        self.mainFrame.pack_propagate(0)
+        self.mainFrame.pack(fill="y")
 
-        widgetsFrame = ctk.CTkFrame(mainFrame, width=200, height=mainFrame.cget("height") - 10, fg_color="transparent")
-        widgetsFrame.pack(side="left", padx=5)
-        widgetsFrame.pack_propagate(0)
+        self.widgetsFrame = ctk.CTkFrame(self.mainFrame, width=200, height=self.mainFrame.cget("height") - 10, fg_color="transparent")
+        self.widgetsFrame.pack(side="left", padx=5, pady=5, fill="y")
+        self.widgetsFrame.pack_propagate(0)
 
-        widgetinfoFrame = ctk.CTkFrame(mainFrame, width=400, height=mainFrame.cget("height") - 10, border_width=1)
-        widgetinfoFrame.pack(side="right", padx=5)
-        widgetinfoFrame.pack_propagate(0)
+        self.widgetinfoFrame = ctk.CTkFrame(self.mainFrame, width=400, height=self.mainFrame.cget("height") - 10, border_width=1)
+        self.widgetinfoFrame.pack(side="right", padx=5, pady=5, fill="y")
+        self.widgetinfoFrame.pack_propagate(0)
 
-        ctk.CTkLabel(widgetinfoFrame, text="OK").place(x=10, y=10)
-        widgetinfoFrame.update()
+        ctk.CTkLabel(self.widgetinfoFrame, text="OK").place(x=10, y=10)
+        self.widgetinfoFrame.update()
 
         for databasekey, widget, _, _ in widgets:
-            widgetFrame = ctk.CTkFrame(widgetsFrame, width=200, height=40, fg_color="transparent", border_width=1)
+            widgetFrame = ctk.CTkFrame(self.widgetsFrame, width=200, height=40, fg_color="transparent", border_width=1)
             widgetFrame.pack(padx=5, pady=2, side="top")
             widgetFrame.pack_propagate(0)
             widgetFrame.bind('<Enter>', lambda e, w=widgetFrame: w.configure(cursor="hand2"))
             widgetFrame.bind('<Leave>', lambda e, w=widgetFrame: w.configure(cursor=""))
-            widgetFrame.bind("<Button-1>", lambda e, wk=databasekey, w=widget, f=widgetFrame, wif=widgetinfoFrame: self.move_to_widget(wk, w, f, wif))
+            widgetFrame.bind("<Button-1>", lambda e, wk=databasekey, w=widget, f=widgetFrame, wif=self.widgetinfoFrame: self.move_to_widget(wk, w, f, wif))
 
             widgetLabel = ctk.CTkLabel(widgetFrame, text=widget, font=("Titillium Web", 13, "bold"))
             widgetLabel.pack(anchor="center", side="left", padx=10)
             widgetLabel.bind('<Enter>', lambda e, w=widgetFrame: w.configure(cursor="hand2"))
             widgetLabel.bind('<Leave>', lambda e, w=widgetFrame: w.configure(cursor=""))
-            widgetLabel.bind("<Button-1>", lambda e, wk=databasekey, w=widget, f=widgetFrame, wif=widgetinfoFrame: self.move_to_widget(wk, w, f, wif))
+            widgetLabel.bind("<Button-1>", lambda e, wk=databasekey, w=widget, f=widgetFrame, wif=self.widgetinfoFrame: self.move_to_widget(wk, w, f, wif))
 
             statusLabel = ctk.CTkLabel(widgetFrame, text="ON" if self.db[databasekey]['status'] else "OFF", text_color="#008000" if self.db[databasekey]['status'] else "#ff0000", font=("Titillium Web", 13, "bold"))
             statusLabel.pack(anchor="center", side="right", padx=10)
             statusLabel.bind('<Enter>', lambda e, w=widgetFrame: w.configure(cursor="hand2"))
             statusLabel.bind('<Leave>', lambda e, w=widgetFrame: w.configure(cursor=""))
-            statusLabel.bind("<Button-1>", lambda e, wk=databasekey, w=widget, f=widgetFrame, wif=widgetinfoFrame: self.move_to_widget(wk, w, f, wif))
+            statusLabel.bind("<Button-1>", lambda e, wk=databasekey, w=widget, f=widgetFrame, wif=self.widgetinfoFrame: self.move_to_widget(wk, w, f, wif))
             
 
     def run(self):

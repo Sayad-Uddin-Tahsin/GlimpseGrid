@@ -36,6 +36,7 @@ ctk.FontManager.load_font(resource_path("TitilliumWeb.ttf", font=True))
 
 class CPUMonitorWidget:
     def __init__(self) -> None:
+        self.name = "CPUMonitor"
         self.generate_shades()
         self.db = json.load(open(resource_path("config.json", data=True), "r"))
         self.image_dict = {
@@ -52,6 +53,19 @@ class CPUMonitorWidget:
             100: "CPU 70 - 100.png"
         }
         self.last_percentage = 0
+
+    def get_y_placement(self) -> int:
+        temp_db = self.db.copy()
+        y_placement = 30
+        listed_db = list(temp_db.keys())
+        for key in listed_db:
+            if listed_db.index(key) >= listed_db.index(self.name):
+                temp_db.pop(key)
+        
+        for widget in temp_db:
+            if temp_db[widget]['status']:
+                y_placement += temp_db[widget]["height"] + 10
+        return y_placement
 
     def generate_shades(self) -> None:
         self.color_shades = {}
@@ -105,7 +119,7 @@ class CPUMonitorWidget:
     def update_usage(self, labelobj: ctk.CTkLabel) -> None:
         for usage in self.get_cpu_usage():
             # labelobj.configure(text_color=self.get_color(int(usage)), text=f" {usage:.2f}%")
-            if self.db['CPUMonitor']['dynamic_icon']:
+            if self.db[f'{self.name}']['dynamic_icon']:
                 if self.image_to_be_changed(int(usage)):
                     labelobj.configure(text_color=self.get_color(int(usage)), text=f" {usage:.2f}%", image=ctk.CTkImage(Image.open(resource_path(self.get_image(int(usage)), cpu=True)), Image.open(resource_path(self.get_image(int(usage)), cpu=True)), (40, 40)))
                 else:
@@ -119,7 +133,7 @@ class CPUMonitorWidget:
     def create_window(self) -> None:
         self.root = ctk.CTk()
         self.root.config(bg='#000000')
-        ctk.set_appearance_mode(self.db['CPUMonitor']['theme'])
+        ctk.set_appearance_mode(self.db[f'{self.name}']['theme'])
         self.root.title("CPU Widget")
         self.root.resizable(0, 0)
         self.root.wm_attributes('-transparentcolor','#000000')
@@ -130,14 +144,15 @@ class CPUMonitorWidget:
         usage_frame = ctk.CTkFrame(self.root, corner_radius=20, bg_color="#000000", width=135, height=60)
         usage_frame.place(x=0, y=0)
 
-        if self.db['CPUMonitor']['dynamic_icon']:
+        if self.db[f'{self.name}']['dynamic_icon']:
             usage_label = ctk.CTkLabel(master=usage_frame, text=" 0.00%", text_color=self.get_color(0), image=ctk.CTkImage(Image.open(resource_path("CPU 0 - 20.png", cpu=True)), Image.open(resource_path("CPU 0 - 20.png", cpu=True)), (40, 40)), compound="left", font=("Titillium Web", 20, "bold"))
         else:
             usage_label = ctk.CTkLabel(master=usage_frame, text=" 0.00%", text_color=self.get_color(0), image=ctk.CTkImage(Image.open(resource_path("CPU Light.png", cpu=True)), Image.open(resource_path("CPU Dark.png", cpu=True)), (40, 40)), compound="left", font=("Titillium Web", 20, "bold"))
         usage_label.place(x=8, y=8)
 
         threading.Thread(target=self.update_usage, args=(usage_label, ), daemon=True).start()
-        self.root.geometry(f"135x{self.db['CPUMonitor']['width']}+{self.db['CPUMonitor']['x']}+{self.db['CPUMonitor']['y']}")
+        self.root.geometry(f"135x{self.db[f'{self.name}']['height']}")
+        self.root.geometry(f"+{(self.root.winfo_screenwidth() - 135) - 30}+{self.get_y_placement()}")
         self.root.mainloop()
 
     def run(self) -> None:

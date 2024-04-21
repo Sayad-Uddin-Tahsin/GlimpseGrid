@@ -39,13 +39,27 @@ ctk.FontManager.load_font(resource_path("TitilliumWeb.ttf", font=True))
 
 class NetworkMonitorWidget:
     def __init__(self) -> None:
+        self.name = 'NetworkMonitor'
         self.upload_label = None
         self.download_label = None
         self.db = json.load(open(resource_path("config.json", data=True), "r"))
 
+    def get_y_placement(self) -> int:
+        temp_db = self.db.copy()
+        y_placement = 30
+        listed_db = list(temp_db.keys())
+        for key in listed_db:
+            if listed_db.index(key) >= listed_db.index(self.name):
+                temp_db.pop(key)
+        
+        for widget in temp_db:
+            if temp_db[widget]['status']:
+                y_placement += temp_db[widget]["height"] + 10
+        return y_placement
+    
     def create_window(self) -> None:
         self.root = ctk.CTk()
-        ctk.set_appearance_mode(self.db['NetworkMonitor']['theme'])
+        ctk.set_appearance_mode(self.db[f'{self.name}']['theme'])
         self.transparent_color = "#000000"
         self.root.title("Network Widget")
         self.root.resizable(0, 0)
@@ -92,7 +106,7 @@ class NetworkMonitorWidget:
     
     def create_network_monitor(self) -> None:
         width = 0
-        if self.db["NetworkMonitor"]['Upload']:
+        if self.db[f'{self.name}']['Upload']:
             upload_frame = ctk.CTkFrame(master=self.root, corner_radius=20, bg_color=self.transparent_color, width=200, height=60)
             upload_frame.place(x=0, y=0)
 
@@ -100,12 +114,12 @@ class NetworkMonitorWidget:
             self.upload_label.place(x=8, y=8)
             width += 60
         
-        if self.db["NetworkMonitor"]['Download']:
-            if self.db["NetworkMonitor"]['Upload']:
+        if self.db[f'{self.name}']['Download']:
+            if self.db[f'{self.name}']['Upload']:
                 width += 10
             
             download_frame = ctk.CTkFrame(master=self.root, corner_radius=20, bg_color=self.transparent_color, width=200, height=60)
-            download_frame.place(x=0, y=70 if self.db["NetworkMonitor"]['Upload'] else 0)
+            download_frame.place(x=0, y=70 if self.db[f'{self.name}']['Upload'] else 0)
 
             self.download_label = ctk.CTkLabel(master=download_frame, text=" 0.00 Kbps", image=ctk.CTkImage(Image.open(resource_path("Download.png", network=True)), Image.open(resource_path("Download.png", network=True)), (40, 40)), compound="left", font=("Titillium Web", 20, "bold"))
             self.download_label.place(x=8, y=8)
@@ -113,8 +127,8 @@ class NetworkMonitorWidget:
         
         threading.Thread(target=self.update_speed, daemon=True).start()
 
-        if self.db["NetworkMonitor"]['Upload'] or self.db["NetworkMonitor"]['Download']:
-            self.root.geometry(f"200x{self.db['NetworkMonitor']['width']}+{self.db['NetworkMonitor']['x']}+{self.db['NetworkMonitor']['y']}")
+        if self.db[f'{self.name}']['Upload'] or self.db[f'{self.name}']['Download']:
+            self.root.geometry(f"200x{self.db[f'{self.name}']['height']}+{(self.root.winfo_screenwidth() - 200) - 30}+{self.get_y_placement()}")
 
             self.root.mainloop()
     
