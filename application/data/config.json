@@ -1,5 +1,8 @@
 {
     "NetworkMonitor": {
+        "name": "Network Widget",
+        "pypath": "application/network.py",
+        "exe": "Network Widget.exe",
         "status": true,
         "Upload": true,
         "Download": true,
@@ -7,6 +10,9 @@
         "height": 130
     },
     "CPUMonitor": {
+        "name": "CPU Widget",
+        "pypath": "application/cpu.py",
+        "exe": "CPU Widget.exe",
         "status": true,
         "dynamic_icon": true,
         "theme": "system",

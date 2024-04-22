@@ -42,10 +42,10 @@ def resource_path(relative_path, data: bool = False, font: bool = False, network
 
 ctk.FontManager.load_font(resource_path("TitilliumWeb.ttf", font=True))
 
-widgets = [
-    ["CPUMonitor", "CPU Widget", "application/cpu.py", "CPU Widget.exe"],
-    ["NetworkMonitor", "Network Widget", "application/network.py", "Network Widget.exe"]
-]
+db = json.load(open(resource_path("config.json", data=True), "r"))
+widgets = []
+for key in db:
+    widgets.append([key, db[key]['name'], db[key]['pypath'], db[key]['exe']])
 
 ctk.FontManager.load_font(resource_path("NotoSans-Regular", font=True))
 ctk.FontManager.load_font(resource_path("TitilliumWeb.ttf", font=True))
@@ -671,7 +671,7 @@ class SettingsWindow:
             statusLabel.bind('<Enter>', lambda e, w=widgetFrame: w.configure(cursor="hand2"))
             statusLabel.bind('<Leave>', lambda e, w=widgetFrame: w.configure(cursor=""))
             statusLabel.bind("<Button-1>", lambda e, wk=databasekey, w=widget, f=widgetFrame, wif=self.widgetinfoFrame: self.move_to_widget(wk, w, f, wif))
-            
+            break
 
     def run(self):
         global settingsWindow
