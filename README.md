@@ -32,7 +32,7 @@ GlimpseGrid is a software tool designed to display widgets on the desktop screen
 | Name | Description | Preview |
 | :---:         |     :---      | :---: |
 | CPU Monitor   | Shows realtime CPU usage with update interval of `1` second!     | ![CPU Monitor](https://github.com/Sayad-Uddin-Tahsin/GlimpseGrid/assets/89304780/567b7425-1ad7-444c-82f4-c54894e971bb) |
-| Network Monitor     | Shows realtime Network Upload (Optional) and Download Speed with update interval of `0.5` seconds!      | ![Network Monitor](https://github.com/Sayad-Uddin-Tahsin/GlimpseGrid/assets/89304780/c831eb18-b069-4fae-a86a-050f35b24f04) |
+| Network Monitor     | Shows realtime Network Upload (Optional) and Download Speed with update interval of `0.5` seconds!      | ![Network Monitor](https://github.com/Sayad-Uddin-Tahsin/GlimpseGrid/assets/89304780/a5be3025-4ff9-4e02-a2da-b7af4e767ef3) |
 
 ## Contributing
 

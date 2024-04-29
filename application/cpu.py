@@ -5,6 +5,18 @@ from PIL import Image
 import sys
 import customtkinter as ctk
 import json
+import logging
+import sys
+
+if not os.path.exists("./Logs"):
+    os.makedirs("./Logs")
+    
+logging.basicConfig(filename='./Logs/CPU-Error.log', level=logging.ERROR, format='%(asctime)s - %(levelname)s - %(message)s')
+
+def error_logger(exception_type, exception_value, exception_traceback):
+    logging.error("Exception occurred:", exc_info=(exception_type, exception_value, exception_traceback))
+
+sys.excepthook = error_logger
 
 def resource_path(relative_path, data: bool = False, font: bool = False, network: bool = False, cpu: bool = False, base: bool = False) -> str:
     try:

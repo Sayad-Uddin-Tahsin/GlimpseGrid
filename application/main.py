@@ -10,7 +10,19 @@ import time
 import json
 import darkdetect
 import psutil
-import multiprocessing
+import logging
+import sys
+import tkinter.messagebox
+
+if not os.path.exists("./Logs"):
+    os.makedirs("./Logs")
+
+logging.basicConfig(filename='./Logs/GlimpseGrid-Error.log', level=logging.ERROR, format='%(asctime)s - %(levelname)s - %(message)s')
+
+def error_logger(exception_type, exception_value, exception_traceback):
+    logging.error("Exception occurred:", exc_info=(exception_type, exception_value, exception_traceback))
+
+sys.excepthook = error_logger
 
 def resource_path(relative_path, data: bool = False, font: bool = False, network: bool = False, cpu: bool = False, base: bool = False, example: bool = False) -> str:
     try:
@@ -40,6 +52,10 @@ def resource_path(relative_path, data: bool = False, font: bool = False, network
                 base_path = os.path.abspath(f"{path}assets/CPU")
             return os.path.join(base_path, relative_path)
 
+def script_path_formatter(file_name):
+    base_path = os.path.abspath(".")
+    return os.path.join(base_path, file_name)
+
 ctk.FontManager.load_font(resource_path("TitilliumWeb.ttf", font=True))
 
 db = json.load(open(resource_path("config.json", data=True), "r"))
@@ -56,12 +72,9 @@ class MainEXE:
         self.db = json.load(open(resource_path("config.json", data=True), "r"))
         self.icon = None
 
-    def _run_process(self, process_name: str, script_path: str):
+    def _run_script(self, process_name: str, script_path: str):
         script_process = subprocess.Popen([script_path])
         self.running_processes[process_name] = script_process
-
-    def _run_script(self, process_name: str, script_path: str):
-        threading.Thread(target=self._run_process, args=(process_name, script_path, ), daemon=True).start()
 
     def _stop_script(self, icon: pystray.Icon, item: pystray.MenuItem):
         self.running_processes[str(item.__name__)].terminate()
@@ -125,7 +138,7 @@ class MainEXE:
     def run(self):
         for databasekey, process_name, _, script_path in widgets:
             if self.db[databasekey]['status']:
-                threading.Thread(target=self._run_script, args=(process_name, script_path, ), daemon=True).start()
+                threading.Thread(target=self._run_script, args=(process_name, script_path_formatter(script_path), ), daemon=True).start()
         self.run_on_systray()
     
 
@@ -204,7 +217,7 @@ class MainPY:
     def run(self):
         for databasekey, process_name, script_path, _ in widgets:
             if self.db[databasekey]['status']:
-                threading.Thread(target=self._run_script, args=(process_name, script_path, ), daemon=True).start()
+                threading.Thread(target=self._run_script, args=(process_name, script_path_formatter(script_path), ), daemon=True).start()
         self.run_on_systray()
 
 class CPUMonitorWidget:
@@ -414,7 +427,6 @@ class NetworkMonitorWidget:
 class SettingsWindow:
     def __init__(self) -> None:
         self.db = json.load(open(resource_path("config.json", data=True), "r"))
-        self.example_images = json.load(open(resource_path("example_images.json", data=True), "r"))
         self.last_widget_selected_frame = None
         self.preview_class = None
     
@@ -649,7 +661,20 @@ class SettingsWindow:
         self.widgetinfoFrame.pack(side="right", padx=5, pady=5, fill="y")
         self.widgetinfoFrame.pack_propagate(0)
 
-        ctk.CTkLabel(self.widgetinfoFrame, text="OK").place(x=10, y=10)
+        ctk.CTkLabel(self.widgetinfoFrame, text="Welcome to GlimpseGrid Dashboard", font=("Titillium Web", 15, "bold")).place(x=10, y=10)
+        ctk.CTkLabel(self.widgetinfoFrame, text="In this dashboard, you have the flexibility to customize various parameters of the available widgets. Once you've made the desired changes, simply press the 'Apply' button. This action will automatically restart the widgets, ensuring that your modifications take effect seamlessly.", wraplength=340, font=("Titillium Web", 13), justify="left").place(x=10, y=40)
+        ctk.CTkLabel(self.widgetinfoFrame, text="Get Involved!", wraplength=340, font=("Titillium Web", 14, 'bold'), justify="left").place(x=10, y=150)
+        ctk.CTkLabel(self.widgetinfoFrame, text="Explore the source code, learn about our contribution guidelines, and join the community forum to start collaborating with us on this open-source project.", wraplength=350, font=("Titillium Web", 13), justify="left").place(x=10, y=180)
+        
+        scbtn = ctk.CTkButton(self.widgetinfoFrame, cursor="hand2", command=lambda: os.popen("explorer \"https://github.com/Sayad-Uddin-Tahsin/GlimpseGrid\""), text="Source Code", width=50, font=("Titillium Web", 13, 'bold'))
+        scbtn.place(x=10, y=250)
+        discussionbtn = ctk.CTkButton(self.widgetinfoFrame, text="Discussion", cursor="hand2", command=lambda: os.popen("explorer \"https://github.com/Sayad-Uddin-Tahsin/GlimpseGrid/discussions\""), width=50, font=("Titillium Web", 13, 'bold'))
+        discussionbtn.place(x=107, y=250)
+        reportbtn = ctk.CTkButton(self.widgetinfoFrame, text="Report Bug", cursor="hand2", command=lambda: os.popen("explorer \"https://github.com/Sayad-Uddin-Tahsin/GlimpseGrid/issues/new/choose\""), width=50, font=("Titillium Web", 13, 'bold'))
+        reportbtn.place(x=192, y=250)
+        aboutbtn = ctk.CTkButton(self.widgetinfoFrame, text="About", cursor="hand2", command=lambda: os.popen("explorer \"https://github.com/Sayad-Uddin-Tahsin/GlimpseGrid/blob/main/README.md\""), width=50, font=("Titillium Web", 13, 'bold'))
+        aboutbtn.place(x=281, y=250)
+
         self.widgetinfoFrame.update()
 
         for databasekey, widget, _, _ in widgets:
@@ -671,7 +696,6 @@ class SettingsWindow:
             statusLabel.bind('<Enter>', lambda e, w=widgetFrame: w.configure(cursor="hand2"))
             statusLabel.bind('<Leave>', lambda e, w=widgetFrame: w.configure(cursor=""))
             statusLabel.bind("<Button-1>", lambda e, wk=databasekey, w=widget, f=widgetFrame, wif=self.widgetinfoFrame: self.move_to_widget(wk, w, f, wif))
-            break
 
     def run(self):
         global settingsWindow
