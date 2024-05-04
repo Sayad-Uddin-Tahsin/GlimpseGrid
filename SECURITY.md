@@ -1,5 +1,5 @@
 # Security Policy
-At sra-pylib, we take security seriously. We value the input of the security community and appreciate their efforts to improve the security of our project. We encourage responsible reporting of any security vulnerabilities that may be found in our project.
+At GlimpseGrid, we take security seriously. We value the input of the security community and appreciate their efforts to improve the security of our project. We encourage responsible reporting of any security vulnerabilities that may be found in our project.
 
 ## Reporting a Vulnerability
 If you believe you have found a security vulnerability in our project, we encourage you to let us know right away. We will investigate all legitimate reports and do our best to quickly fix the problem. Before reporting, please review the following guidelines:
