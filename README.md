@@ -4,7 +4,7 @@
 
 <p align="center"><a href="https://github.com/Sayad-Uddin-Tahsin/GlimpseGrid/actions/workflows/github-code-scanning/codeql"><img src="https://github.com/Sayad-Uddin-Tahsin/GlimpseGrid/actions/workflows/github-code-scanning/codeql/badge.svg" alt="CodeQL Badge"></a></p>
 
-<h1 align="center">Blink Eye</h1>
+<h1 align="center">GlimpseGrid</h1>
 
 GlimpseGrid is a software tool designed to display widgets on the desktop screen, making information easily accessible. It is characterized by its low-weight, highly efficient nature, consuming minimal CPU power.
 
